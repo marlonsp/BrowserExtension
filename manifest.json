@@ -7,7 +7,8 @@
     "webRequest",
     "webRequestBlocking",
     "<all_urls>",
-    "cookies"
+    "cookies",
+    "storage"
   ],
   "background": {
     "scripts": ["background.js"],
