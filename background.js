@@ -3,7 +3,30 @@ let firstPartyCookiesCount = 0;
 let thirdPartyCookiesCount = 0;
 let localStorageData = 0;
 let sessionStorageData = 0;
+let canvasFingerprint = null;
 
+// Função para calcular a impressão digital de canvas
+function calculateCanvasFingerprint() {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const txt = 'Canvas Fingerprint';
+
+  ctx.textBaseline = 'top';
+  ctx.font = "14px 'Arial'";
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#f60';
+  ctx.fillRect(125,1,62,20);
+  ctx.fillStyle = '#069';
+  ctx.fillText(txt, 2, 15);
+  ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+  ctx.fillText(txt, 4, 17);
+
+  const dataURL = canvas.toDataURL();
+  const hash = window.btoa(dataURL);
+  return hash;
+}
+
+// Listener para eventos de requisição antes de serem feitas
 browser.webRequest.onBeforeRequest.addListener(
   function(details) {
     // Verifica se o domínio da requisição não pertence ao domínio principal
@@ -18,6 +41,7 @@ browser.webRequest.onBeforeRequest.addListener(
   ["blocking"]
 );
 
+// Listener para eventos de requisição completadas
 browser.webRequest.onCompleted.addListener(
   function(details) {
     if (details.type === "main_frame") {
@@ -35,7 +59,7 @@ browser.webRequest.onCompleted.addListener(
   { urls: ["<all_urls>"] }
 );
 
-// Envia as contagens para o popup quando solicitado
+// Envia as contagens e impressão digital de canvas para o popup quando solicitado
 browser.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "getStats") {
     sendResponse({
@@ -43,11 +67,13 @@ browser.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       firstPartyCookiesCount: firstPartyCookiesCount,
       thirdPartyCookiesCount: thirdPartyCookiesCount,
       localStorageData: localStorageData,
-      sessionStorageData: sessionStorageData
+      sessionStorageData: sessionStorageData,
+      canvasFingerprint: canvasFingerprint
     });
   }
 });
 
+// Listener para quando uma aba é atualizada
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.active) {
     browser.tabs.query({active: true, currentWindow: true}).then(tabs => {
@@ -60,11 +86,13 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
           });
         `;
         browser.tabs.executeScript(tabs[0].id, {code: code_injection});
+        canvasFingerprint = calculateCanvasFingerprint();
       }
     });
   }
 });
 
+// Listener para mensagens recebidas pelo background script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.request === "getData") {
     sendResponse({
@@ -72,7 +100,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       firstPartyCookiesCount,
       thirdPartyCookiesCount,
       localStorageData,
-      sessionStorageData
+      sessionStorageData,
+      canvasFingerprint
     });
   }
 
