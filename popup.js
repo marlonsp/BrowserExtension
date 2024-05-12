@@ -10,5 +10,10 @@ browser.runtime.sendMessage({ action: "getStats" }, function(response) {
     } else {
       document.getElementById("canvasFingerprint").innerText = "Impressão digital de Canvas: Não encontrada";
     }
+    if (response.hijackingDetected) {
+      document.getElementById("hijackingDetected").innerText = "Hijacking detectado";
+    } else {
+      document.getElementById("hijackingDetected").innerText = "Hijacking não detectado";
+    }
   });
   

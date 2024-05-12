@@ -4,6 +4,7 @@ let thirdPartyCookiesCount = 0;
 let localStorageData = 0;
 let sessionStorageData = 0;
 let canvasFingerprint = null;
+let hijackingDetected = false; // Variável para armazenar o resultado do teste de hijack
 
 // Função para calcular a impressão digital de canvas
 function calculateCanvasFingerprint() {
@@ -26,6 +27,19 @@ function calculateCanvasFingerprint() {
   return hash;
 }
 
+// Função para verificar se há atividades suspeitas de sequestro de navegador
+function checkForBrowserHijack(details) {
+  // Obtém o número da porta da solicitação
+  const requestPort = new URL(details.url).port;
+
+  const hijackingPorts = ['8080', '8081', '8443', '8000'];
+  if (hijackingPorts.includes(requestPort)) {
+    hijackingDetected = true;
+  }
+
+  // Você pode adicionar mais verificações de comportamento suspeito aqui
+}
+
 // Listener para eventos de requisição antes de serem feitas
 browser.webRequest.onBeforeRequest.addListener(
   function(details) {
@@ -36,6 +50,9 @@ browser.webRequest.onBeforeRequest.addListener(
 
     // Incrementa o contador de solicitações de terceiros
     thirdPartyConnectionsCount++;
+
+    // Verifica atividades suspeitas de sequestro de navegador
+    checkForBrowserHijack(details);
   },
   { urls: ["<all_urls>"] },
   ["blocking"]
@@ -68,7 +85,8 @@ browser.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       thirdPartyCookiesCount: thirdPartyCookiesCount,
       localStorageData: localStorageData,
       sessionStorageData: sessionStorageData,
-      canvasFingerprint: canvasFingerprint
+      canvasFingerprint: canvasFingerprint,
+      hijackingDetected: hijackingDetected // Envia o resultado do teste de hijack
     });
   }
 });
@@ -101,7 +119,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       thirdPartyCookiesCount,
       localStorageData,
       sessionStorageData,
-      canvasFingerprint
+      canvasFingerprint,
+      hijackingDetected: hijackingDetected // Envia o resultado do teste de hijack
     });
   }
 
