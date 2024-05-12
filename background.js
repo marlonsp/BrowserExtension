@@ -1,61 +1,83 @@
-let thirdPartyDomains = new Set();
+let thirdPartyConnectionsCount = 0;
+let firstPartyCookiesCount = 0;
+let thirdPartyCookiesCount = 0;
+let localStorageData = 0;
+let sessionStorageData = 0;
 
-function updateBadge(tabId) {
-  let thirdPartyRequests = 0;
-  let cookiesCount = 0;
-  let supercookiesCount = 0;
+browser.webRequest.onBeforeRequest.addListener(
+  function(details) {
+    // Verifica se o domínio da requisição não pertence ao domínio principal
+    if (!details.originUrl || details.originUrl === details.url) {
+      return;
+    }
 
-  browser.tabs.get(tabId, function(tab) {
-    let currentTabUrl = new URL(tab.url);
-    let currentTabDomain = currentTabUrl.hostname;
+    // Incrementa o contador de solicitações de terceiros
+    thirdPartyConnectionsCount++;
+  },
+  { urls: ["<all_urls>"] },
+  ["blocking"]
+);
 
-    browser.webRequest.onBeforeRequest.addListener(
-      (details) => {
-        if (!details.url.startsWith("http")) {
-          return;
-        }
+browser.webRequest.onCompleted.addListener(
+  function(details) {
+    if (details.type === "main_frame") {
+      browser.cookies.getAll({ url: details.url }, function(cookies) {
+        cookies.forEach(function(cookie) {
+          if (cookie.firstPartyDomain === cookie.domain) {
+            firstPartyCookiesCount++;
+          } else {
+            thirdPartyCookiesCount++;
+          }
+        });
+      });
+    }
+  },
+  { urls: ["<all_urls>"] }
+);
 
-        let url = new URL(details.url);
-        let domain = url.hostname;
-        if (domain !== currentTabDomain) { // Verifica se o domínio é diferente do domínio da página atual
-          thirdPartyDomains.add(domain);
-          thirdPartyRequests++;
-
-          // Contagem de cookies
-          browser.cookies.getAll({ domain: domain }, (cookies) => {
-            cookiesCount += cookies.length;
-          });
-
-          // Lógica para detectar e contar supercookies
-
-          // Atualize as informações no popup
-          updatePopupInfo(tabId, thirdPartyRequests, cookiesCount, supercookiesCount);
-        }
-      },
-      {urls: ["<all_urls>"], tabId: tabId},
-      ["blocking"]
-    );
-  });
-}
-
-function updatePopupInfo(tabId, requests, cookies, supercookies) {
-  // Enviar mensagem para o popup.html com as informações de cookies, supercookies e solicitações de terceiros
-  browser.runtime.sendMessage({ cookies: cookies, supercookies: supercookies, thirdPartyRequests: requests });
-}
-
-// Listener para solicitações do popup.html para obter informações de cookies e supercookies
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.requestInfo) {
+// Envia as contagens para o popup quando solicitado
+browser.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.action === "getStats") {
     sendResponse({
-      cookies: cookiesCount, // Assuma que 'cookiesCount' é a contagem total de cookies
-      supercookies: supercookiesCount, // Assuma que 'supercookiesCount' é a contagem total de supercookies
-      thirdPartyRequests: thirdPartyDomains.size
+      thirdPartyConnectionsCount: thirdPartyConnectionsCount,
+      firstPartyCookiesCount: firstPartyCookiesCount,
+      thirdPartyCookiesCount: thirdPartyCookiesCount,
+      localStorageData: localStorageData,
+      sessionStorageData: sessionStorageData
     });
   }
 });
 
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete") {
-    updateBadge(tabId);
+  if (changeInfo.status === 'complete' && tab.active) {
+    browser.tabs.query({active: true, currentWindow: true}).then(tabs => {
+      if (tabs.length > 0 && tabs[0].id) {
+        const code_injection = `
+          browser.runtime.sendMessage({
+            type: 'storageData',
+            localStorageCount: localStorage.length,
+            sessionStorageCount: sessionStorage.length
+          });
+        `;
+        browser.tabs.executeScript(tabs[0].id, {code: code_injection});
+      }
+    });
+  }
+});
+
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.request === "getData") {
+    sendResponse({
+      thirdPartyConnectionsCount,
+      firstPartyCookiesCount,
+      thirdPartyCookiesCount,
+      localStorageData,
+      sessionStorageData
+    });
+  }
+
+  if (message.type === "storageData") {
+    localStorageData = message.localStorageCount;
+    sessionStorageData = message.sessionStorageCount;
   }
 });

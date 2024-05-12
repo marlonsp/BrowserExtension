@@ -1,23 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebGuardian</title>
   <style>
     body {
-      width: 250px;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f3f3f3;
+    }
+    .container {
+      max-width: 300px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     h1 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    p {
       font-size: 16px;
-      display: flex;
-      justify-content: space-between;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h2>WebGuardian</h2>
-  <h1>Cookies: <span id="cookies"></span></h1>
-  <h1>Supercookies: <span id="supercookies"></span></h1>
-  <h1>Third Party Requests: <span id="thirdPartyRequests"></span></h1>
+  <div class="container">
+    <h1>WebGuardian</h1>
+    <p id="connectionsCount">Aguardando dados...</p>
+    <p id="cookiesCount"></p>
+    <p id="localStorageCount"></p>
+    <p id="storageCount"></p>
+  </div>  
   <script src="popup.js"></script>
 </body>
 </html>

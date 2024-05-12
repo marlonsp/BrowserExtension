@@ -1,20 +1,8 @@
-document.addEventListener("DOMContentLoaded", function () {
-  browser.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    let tabId = tabs[0].id;
-    browser.browserAction.getBadgeText({ tabId: tabId }, function (badgeText) {
-      document.getElementById("cookies").textContent = "Loading..."; // Mostra "Carregando..." enquanto obtém a contagem de cookies
-      document.getElementById("supercookies").textContent = "Loading..."; // Mostra "Carregando..." enquanto obtém a contagem de supercookies
-      document.getElementById("thirdPartyRequests").textContent = "Loading..."; // Mostra "Carregando..." enquanto obtém a contagem de solicitações de terceiros
-
-      // Receber mensagem do background.js com informações de cookies e supercookies
-      browser.runtime.onMessage.addListener((message) => {
-        document.getElementById("cookies").textContent = message.cookies;
-        document.getElementById("supercookies").textContent = message.supercookies;
-        document.getElementById("thirdPartyRequests").textContent = message.thirdPartyRequests;
-      });
-
-      // Solicitar informações de cookies e supercookies do background.js
-      browser.runtime.sendMessage({ requestInfo: true });
-    });
+browser.runtime.sendMessage({ action: "getStats" }, function(response) {
+    document.getElementById("connectionsCount").innerText = "Conexões de Terceiros: " + response.thirdPartyConnectionsCount;
+    document.getElementById("cookiesCount").innerText = "Cookies de Primeira Parte: " + response.firstPartyCookiesCount +
+                                                          "\nCookies de Terceira Parte: " + response.thirdPartyCookiesCount;
+    document.getElementById("storageCount").innerText = "Itens de Local Storage: " + response.localStorageData +
+                                                            "\nItens de Session Storage: " + response.sessionStorageData;
   });
-});
+  

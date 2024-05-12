@@ -1,26 +1,31 @@
 {
   "manifest_version": 2,
-  "name": "Detector de Conexões a Domínios de Terceiros",
+  "name": "WebGuardian",
+  "description": "Proteja sua privacidade online monitorando conexões de terceiros, cookies e armazenamento local.",
   "version": "1.0",
-  "description": "Um plugin para detectar e apresentar o número de conexões a domínios de terceiros em uma navegação web.",
   "permissions": [
     "webRequest",
     "webRequestBlocking",
-    "<all_urls>",
+    "tabs",
+    "activeTab",
     "cookies",
-    "storage"
+    "storage",
+    "<all_urls>"
   ],
   "background": {
-    "scripts": ["background.js"],
-    "persistent": false
+    "scripts": ["background.js"]
   },
   "browser_action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "48": "icon.png"
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
   },
   "icons": {
-    "48": "icon.png"
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }
